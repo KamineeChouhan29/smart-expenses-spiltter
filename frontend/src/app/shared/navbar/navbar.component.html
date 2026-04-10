@@ -1,0 +1,36 @@
+<nav class="sticky top-0 z-50 glass-card rounded-none border-x-0 border-t-0 px-4 py-3">
+  <div class="max-w-2xl mx-auto flex items-center justify-between">
+    <!-- Brand -->
+    <a routerLink="/dashboard" class="flex items-center gap-2 group">
+      <div class="w-8 h-8 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md shadow-violet-500/30 group-hover:shadow-violet-500/50 transition-shadow">
+        <span class="text-sm font-bold text-white">₹</span>
+      </div>
+      <span class="text-white font-bold text-lg tracking-tight">SplitSmart</span>
+    </a>
+
+    <!-- User -->
+    @if (user()) {
+      <div class="flex items-center gap-3">
+        <div class="text-right hidden sm:block">
+          <p class="text-white text-sm font-medium leading-none">{{ user()?.username }}</p>
+          <p class="text-slate-400 text-xs mt-0.5">{{ user()?.email }}</p>
+        </div>
+
+        <!-- Avatar -->
+        <div class="w-9 h-9 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+          {{ getInitial() }}
+        </div>
+
+        <!-- Logout -->
+        <button id="logout-btn" (click)="logout()"
+                class="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all duration-200"
+                title="Logout">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </button>
+      </div>
+    }
+  </div>
+</nav>

@@ -1,0 +1,145 @@
+<app-navbar></app-navbar>
+
+<div class="page-wrapper animate-fade-in">
+
+  <!-- Greeting -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-white">{{ greeting }}, {{ user()?.username }}! 👋</h1>
+    <p class="text-slate-400 text-sm mt-1">Here's your expense overview</p>
+  </div>
+
+  <!-- AI Insights Panel -->
+  <div class="glass-card mb-6 overflow-hidden">
+    <button id="insights-toggle" (click)="loadInsights()"
+            class="w-full flex items-center justify-between p-5 hover:bg-white/5 transition-colors">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-gradient-to-br from-violet-600 to-pink-500 rounded-xl flex items-center justify-center shadow-md shadow-violet-500/30 animate-pulse-slow">
+          <span class="text-lg">✨</span>
+        </div>
+        <div class="text-left">
+          <p class="text-white font-semibold text-sm">AI Smart Insights</p>
+          <p class="text-slate-400 text-xs">Powered by Groq Llama 3</p>
+        </div>
+      </div>
+      <svg class="h-5 w-5 text-slate-400 transition-transform duration-300"
+           [class.rotate-180]="insightsExpanded()"
+           fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </button>
+
+    @if (insightsExpanded()) {
+      <div class="border-t border-white/10 px-5 py-4 animate-slide-up">
+        @if (loadingInsights()) {
+          <div class="flex items-center gap-3 text-slate-400 text-sm">
+            <svg class="animate-spin h-4 w-4 text-violet-400" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            Analyzing your spending patterns...
+          </div>
+        } @else {
+          <ul class="space-y-3">
+            @for (insight of insights(); track $index) {
+              <li class="flex items-start gap-3 text-sm text-slate-200">
+                <span class="text-violet-400 mt-0.5 shrink-0">→</span>
+                <span>{{ insight }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- My Groups -->
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-white">My Groups</h2>
+    <button id="create-group-btn" (click)="openCreateModal()"
+            class="btn-primary py-2 px-4 text-sm flex items-center gap-2">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      New Group
+    </button>
+  </div>
+
+  @if (loadingGroups()) {
+    <div class="space-y-3">
+      @for (i of [1,2,3]; track i) {
+        <div class="glass-card p-5 animate-pulse">
+          <div class="h-4 bg-white/10 rounded w-1/2 mb-2"></div>
+          <div class="h-3 bg-white/5 rounded w-1/3"></div>
+        </div>
+      }
+    </div>
+  } @else if (groups().length === 0) {
+    <div class="glass-card p-10 text-center">
+      <div class="text-5xl mb-4">💸</div>
+      <p class="text-white font-semibold mb-1">No groups yet</p>
+      <p class="text-slate-400 text-sm mb-4">Create a group to start splitting expenses</p>
+      <button (click)="openCreateModal()" class="btn-primary">Create your first group</button>
+    </div>
+  } @else {
+    <div class="space-y-3">
+      @for (group of groups(); track group.id; let i = $index) {
+        <div class="glass-card-hover p-5 cursor-pointer animate-slide-up"
+             [style.animation-delay]="i * 80 + 'ms'"
+             (click)="goToGroup(group.id)">
+          <div class="flex items-center gap-4">
+            <!-- Icon -->
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold shrink-0"
+                 [style.background]="'linear-gradient(135deg, hsl(' + (group.id * 47 % 360) + ',70%,35%), hsl(' + (group.id * 47 % 360 + 40) + ',70%,25%))'">
+              {{ group.name.charAt(0).toUpperCase() }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-white font-semibold truncate">{{ group.name }}</p>
+              <p class="text-slate-400 text-xs mt-0.5">Created by {{ group.createdBy }}</p>
+            </div>
+            <svg class="h-5 w-5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Create Group Modal -->
+@if (showCreateModal()) {
+  <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0 animate-fade-in"
+       (click)="closeCreateModal()">
+    <div class="glass-card w-full max-w-md p-6 animate-slide-up" (click)="$event.stopPropagation()">
+      <h3 class="text-lg font-semibold text-white mb-5">Create New Group</h3>
+
+      @if (createError()) {
+        <div class="bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm rounded-xl px-4 py-3 mb-4">
+          {{ createError() }}
+        </div>
+      }
+
+      <div class="mb-5">
+        <label class="form-label" for="group-name">Group name</label>
+        <input id="group-name" type="text" class="form-input" placeholder="e.g. Goa Trip 2025"
+               [value]="newGroupName()"
+               (input)="newGroupName.set($any($event.target).value)"
+               (keyup.enter)="createGroup()">
+      </div>
+
+      <div class="flex gap-3">
+        <button (click)="closeCreateModal()" class="btn-secondary flex-1">Cancel</button>
+        <button id="confirm-create-group" (click)="createGroup()" class="btn-primary flex-1 flex items-center justify-center gap-2"
+                [disabled]="createLoading()">
+          @if (createLoading()) {
+            <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+          }
+          Create Group
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,190 @@
+<app-navbar></app-navbar>
+
+<div class="page-wrapper animate-fade-in">
+
+  <!-- Back + Header -->
+  <div class="flex items-center gap-3 mb-6">
+    <button (click)="goBack()" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <div>
+      <h1 class="text-xl font-bold text-white">Group Expenses</h1>
+      <p class="text-slate-400 text-xs">Group #{{ groupId }}</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="space-y-3">
+      @for (i of [1,2,3]; track i) {
+        <div class="glass-card p-5 animate-pulse">
+          <div class="h-4 bg-white/10 rounded w-2/3 mb-2"></div>
+          <div class="h-3 bg-white/5 rounded w-1/3"></div>
+        </div>
+      }
+    </div>
+  } @else {
+
+    <!-- Members section -->
+    <div class="glass-card p-5 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-white font-semibold text-sm">Members ({{ members().length }})</h2>
+        <button id="add-member-toggle" (click)="toggleMemberPanel()"
+                class="text-violet-400 text-xs hover:text-violet-300 transition-colors font-medium">
+          + Add member
+        </button>
+      </div>
+
+      <!-- Member avatars -->
+      <div class="flex flex-wrap gap-2">
+        @for (m of members(); track m.id) {
+          <div class="flex items-center gap-1.5 bg-white/5 rounded-full px-3 py-1">
+            <div class="w-5 h-5 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white">
+              {{ getInitial(m.username) }}
+            </div>
+            <span class="text-slate-200 text-xs">{{ m.username }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Add member form -->
+      @if (showMemberPanel()) {
+        <div class="mt-4 pt-4 border-t border-white/10 animate-slide-up">
+          @if (addMemberError()) {
+            <p class="text-rose-400 text-xs mb-2">{{ addMemberError() }}</p>
+          }
+          <div class="flex gap-2">
+            <input type="text" class="form-input flex-1 py-2 text-sm" placeholder="Enter username"
+                   [value]="newMemberUsername()"
+                   (input)="newMemberUsername.set($any($event.target).value)"
+                   (keyup.enter)="addMember()">
+            <button id="add-member-submit" (click)="addMember()" class="btn-primary py-2 px-4 text-sm"
+                    [disabled]="addMemberLoading()">
+              @if (addMemberLoading()) { ... } @else { Add }
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Who Owes Whom -->
+    <div class="glass-card p-5 mb-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-white font-semibold text-sm">Who Owes Whom</h2>
+        @if (!balancesLoaded()) {
+          <button id="load-balances-btn" (click)="loadBalances()"
+                  class="text-violet-400 text-xs hover:text-violet-300 transition-colors font-medium">
+            Calculate ↗
+          </button>
+        }
+      </div>
+
+      @if (balancesLoaded()) {
+        @if (loadingBalances()) {
+          <div class="flex items-center gap-2 text-slate-400 text-sm mt-3">
+            <svg class="animate-spin h-4 w-4 text-violet-400" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            Calculating...
+          </div>
+        } @else if (balances().length === 0) {
+          <p class="text-slate-400 text-sm mt-3 flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> All settled up!
+          </p>
+        } @else {
+          <div class="space-y-2 mt-3">
+            @for (b of balances(); track $index) {
+              <div class="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3 animate-slide-up">
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="font-medium text-rose-400">{{ b.debtor }}</span>
+                  <span class="text-slate-500">owes</span>
+                  <span class="font-medium text-emerald-400">{{ b.creditor }}</span>
+                </div>
+                <span class="text-white font-semibold text-sm">{{ formatAmount(b.amount) }}</span>
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Expenses List -->
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-white font-semibold">Expenses</h2>
+      <span class="text-slate-400 text-xs">{{ expenses().length }} total</span>
+    </div>
+
+    @if (expenses().length === 0) {
+      <div class="glass-card p-8 text-center">
+        <div class="text-4xl mb-3">🧾</div>
+        <p class="text-white font-medium mb-1">No expenses yet</p>
+        <p class="text-slate-400 text-sm">Add the first expense below</p>
+      </div>
+    } @else {
+      <div class="space-y-3">
+        @for (expense of expenses(); track expense.id; let i = $index) {
+          <div class="glass-card-hover p-4 animate-slide-up" [style.animation-delay]="i * 60 + 'ms'">
+            <div class="flex items-start gap-3">
+              <!-- Category emoji -->
+              <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-lg shrink-0">
+                {{ getCategoryEmoji(expense.category) }}
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                  <p class="text-white font-medium text-sm truncate">{{ expense.description }}</p>
+                  <span [class]="'badge ' + getCategoryClass(expense.category)">
+                    {{ expense.category }}
+                  </span>
+                  <span class="badge bg-white/5 text-slate-400 border border-white/10 text-xs">
+                    {{ expense.splitType }}
+                  </span>
+                </div>
+
+                <p class="text-slate-400 text-xs">
+                  Paid by <span class="text-violet-400 font-medium">{{ expense.paidBy }}</span>
+                  · {{ expense.createdAt | date:'dd MMM, h:mm a' }}
+                </p>
+
+                <!-- Splits breakdown -->
+                @if (expense.splits && expense.splits.length > 0) {
+                  <div class="flex flex-wrap gap-1.5 mt-2">
+                    @for (split of expense.splits; track split.userId) {
+                      <span class="text-xs bg-white/5 text-slate-300 px-2 py-0.5 rounded-full">
+                        {{ split.username }}: {{ formatAmount(split.amountOwed) }}
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="text-right shrink-0">
+                <p class="text-white font-bold">{{ formatAmount(expense.amount) }}</p>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>
+
+<!-- Floating Add Expense Button -->
+<button id="open-add-expense" (click)="openExpenseModal()"
+        class="fixed bottom-6 right-4 w-14 h-14 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl
+               shadow-xl shadow-violet-500/40 flex items-center justify-center text-white text-2xl
+               hover:shadow-violet-500/60 hover:scale-110 active:scale-95 transition-all duration-300 z-40">
+  +
+</button>
+
+<!-- Add Expense Modal -->
+@if (showExpenseModal()) {
+  <app-add-expense
+    [groupId]="groupId"
+    [members]="members()"
+    (expenseAdded)="onExpenseAdded()"
+    (cancelled)="closeExpenseModal()">
+  </app-add-expense>
+}
