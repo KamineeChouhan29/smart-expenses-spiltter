@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between p-5 border-b border-white/10">
       <div>
-        <h3 class="text-lg font-semibold text-white">Add Expense</h3>
+        <h3 class="text-lg font-semibold text-white">{{ editExpense ? 'Edit Expense' : 'Add Expense' }}</h3>
         <p class="text-slate-400 text-xs mt-0.5">AI will auto-categorize ✨</p>
       </div>
       <button (click)="cancelled.emit()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all">
@@ -139,9 +139,9 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
           </svg>
-          Adding...
+          Saving...
         } @else {
-          Add Expense
+          {{ editExpense ? 'Update Expense' : 'Add Expense' }}
         }
       </button>
     </div>

@@ -64,6 +64,53 @@ public class ExpenseService {
         return expense;
     }
 
+    @Transactional
+    public Expense updateExpense(Long expenseId, ExpenseRequest req, User requestingUser) {
+        Expense expense = expenseRepository.findById(expenseId)
+                .orElseThrow(() -> new RuntimeException("Expense not found"));
+
+        if (!groupMemberRepository.existsByGroupIdAndUserId(expense.getGroup().getId(), requestingUser.getId())) {
+            throw new RuntimeException("You are not a member of this group");
+        }
+
+        User paidBy = userRepository.findById(req.getPaidByUserId())
+                .orElseThrow(() -> new RuntimeException("Payer not found"));
+
+        if (!expense.getDescription().trim().equalsIgnoreCase(req.getDescription().trim())) {
+             expense.setCategory(aiService.categorizeExpense(req.getDescription()));
+        }
+
+        expense.setDescription(req.getDescription());
+        expense.setAmount(req.getAmount());
+        expense.setPaidBy(paidBy);
+        expense.setSplitType(Expense.SplitType.valueOf(req.getSplitType()));
+
+        expense = expenseRepository.save(expense);
+
+        List<Split> oldSplits = splitRepository.findByExpenseId(expenseId);
+        splitRepository.deleteAll(oldSplits);
+
+        if ("EQUAL".equals(req.getSplitType())) {
+            createEqualSplits(expense, expense.getGroup().getId());
+        } else {
+            createCustomSplits(expense, req);
+        }
+
+        return expense;
+    }
+
+    @Transactional
+    public void deleteExpense(Long expenseId, User requestingUser) {
+        Expense expense = expenseRepository.findById(expenseId)
+                .orElseThrow(() -> new RuntimeException("Expense not found"));
+        if (!groupMemberRepository.existsByGroupIdAndUserId(expense.getGroup().getId(), requestingUser.getId())) {
+            throw new RuntimeException("You are not a member of this group");
+        }
+        List<Split> splits = splitRepository.findByExpenseId(expenseId);
+        splitRepository.deleteAll(splits);
+        expenseRepository.deleteById(expenseId);
+    }
+
     // ── Read ──────────────────────────────────────────────────────────────────
 
     public List<Expense> getGroupExpenses(Long groupId, User requestingUser) {

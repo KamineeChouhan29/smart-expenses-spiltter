@@ -1,0 +1,26 @@
+# Spring Boot build files
+target/
+backend/target/
+
+# Frontend build files and dependencies
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Binaries and archives
+maven.zip
+apache-maven-3.9.6/
+
+# Sensitive Information
+backend/src/main/resources/application.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo

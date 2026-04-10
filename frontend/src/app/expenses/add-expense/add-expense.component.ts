@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ExpenseService } from '../../core/services/expense.service';
 import { AuthService } from '../../core/services/auth.service';
-import { GroupMember, ExpenseRequest } from '../../core/models/models';
+import { GroupMember, ExpenseRequest, Expense } from '../../core/models/models';
 
 interface CustomSplitEntry {
   userId: number;
@@ -25,6 +25,8 @@ export class AddExpenseComponent implements OnInit {
   @Output() expenseAdded = new EventEmitter<void>();
   @Output() cancelled    = new EventEmitter<void>();
 
+  @Input() editExpense?: Expense;
+
   currentUser = computed(() => this.authService.currentUser());
 
   description   = '';
@@ -43,13 +45,36 @@ export class AddExpenseComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Default payer = current user
-    const uid = this.currentUser()?.id;
-    if (uid) {
-      const me = this.members.find(m => m.id === uid);
-      this.paidByUserId = me ? me.id : (this.members[0]?.id ?? 0);
+    if (this.editExpense) {
+      this.description = this.editExpense.description;
+      this.amount = this.editExpense.amount;
+      const payer = this.members.find(m => m.username === this.editExpense!.paidBy);
+      this.paidByUserId = payer ? payer.id : (this.members[0]?.id ?? 0);
+      this.splitType = this.editExpense.splitType as 'EQUAL' | 'CUSTOM';
+      
+      this.initCustomSplits(); 
+      if (this.splitType === 'CUSTOM') {
+         this.splitMode = 'AMOUNT';
+         if (this.editExpense.splits) {
+             this.customSplits = this.members.map(m => {
+                 const split = this.editExpense!.splits!.find(s => s.userId === m.id);
+                 return {
+                     userId: m.id,
+                     username: m.username,
+                     amount: split ? split.amountOwed : 0,
+                     percentage: 0
+                 };
+             });
+         }
+      }
+    } else {
+      const uid = this.currentUser()?.id;
+      if (uid) {
+        const me = this.members.find(m => m.id === uid);
+        this.paidByUserId = me ? me.id : (this.members[0]?.id ?? 0);
+      }
+      this.initCustomSplits();
     }
-    this.initCustomSplits();
   }
 
   initCustomSplits(): void {
@@ -125,13 +150,17 @@ export class AddExpenseComponent implements OnInit {
       }));
     }
 
-    this.expenseService.addExpense(req).subscribe({
+    const obs$ = this.editExpense 
+      ? this.expenseService.updateExpense(this.editExpense.id!, req)
+      : this.expenseService.addExpense(req);
+
+    obs$.subscribe({
       next: () => {
         this.loading.set(false);
         this.expenseAdded.emit();
       },
       error: (err) => {
-        this.error.set(err.error?.error || 'Failed to add expense.');
+        this.error.set(err.error?.error || 'Failed to process expense.');
         this.loading.set(false);
       }
     });

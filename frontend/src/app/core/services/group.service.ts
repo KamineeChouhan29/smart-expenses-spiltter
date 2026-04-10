@@ -33,4 +33,14 @@ export class GroupService {
   getBalances(groupId: number): Observable<BalanceEntry[]> {
     return this.http.get<BalanceEntry[]>(`${this.API}/${groupId}/balances`);
   }
+
+  updateGroup(groupId: number, name: string): Observable<Group> {
+    return this.http.put<Group>(`${this.API}/${groupId}`, { name })
+      .pipe(tap(updated => this.groups.update(list => list.map(g => g.id === groupId ? updated : g))));
+  }
+
+  deleteGroup(groupId: number): Observable<void> {
+    return this.http.delete<void>(`${this.API}/${groupId}`)
+      .pipe(tap(() => this.groups.update(list => list.filter(g => g.id !== groupId))));
+  }
 }

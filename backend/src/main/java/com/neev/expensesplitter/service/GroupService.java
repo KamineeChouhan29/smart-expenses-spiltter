@@ -37,6 +37,19 @@ public class GroupService {
         return group;
     }
 
+    public ExpenseGroup updateGroup(Long groupId, String newName, User requestingUser) {
+        assertMember(groupId, requestingUser.getId());
+        ExpenseGroup group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        group.setName(newName);
+        return groupRepository.save(group);
+    }
+
+    public void deleteGroup(Long groupId, User requestingUser) {
+        assertMember(groupId, requestingUser.getId());
+        groupRepository.deleteById(groupId);
+    }
+
     // ── Read ──────────────────────────────────────────────────────────────────
 
     public List<ExpenseGroup> getUserGroups(User user) {
@@ -60,7 +73,14 @@ public class GroupService {
                 .orElseThrow(() -> new RuntimeException("Group not found"));
 
         User toAdd = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User '" + username + "' not found"));
+                .orElseGet(() -> {
+                    User guest = User.builder()
+                            .username(username)
+                            .email(username.toLowerCase().replaceAll("\\s+", "") + "_guest@dummy.local")
+                            .password("unusable_password_guest")
+                            .build();
+                    return userRepository.save(guest);
+                });
 
         if (groupMemberRepository.existsByGroupIdAndUserId(groupId, toAdd.getId())) {
             throw new RuntimeException(username + " is already a member of this group");

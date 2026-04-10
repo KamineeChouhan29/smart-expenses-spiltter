@@ -42,6 +42,25 @@ public class GroupController {
         return ResponseEntity.ok(toGroupResponse(group));
     }
 
+    // ── PUT  /api/groups/{id}  →  rename group ────────────────────────────────
+    @PutMapping("/{id}")
+    public ResponseEntity<GroupResponse> updateGroup(@PathVariable Long id,
+                                                     @RequestBody GroupRequest request,
+                                                     Principal principal) {
+        User user = resolveUser(principal);
+        ExpenseGroup group = groupService.updateGroup(id, request.name(), user);
+        return ResponseEntity.ok(toGroupResponse(group));
+    }
+
+    // ── DELETE /api/groups/{id}  →  delete group ──────────────────────────────
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteGroup(@PathVariable Long id,
+                                            Principal principal) {
+        User user = resolveUser(principal);
+        groupService.deleteGroup(id, user);
+        return ResponseEntity.ok().build();
+    }
+
     // ── POST /api/groups/{id}/members  →  add a member ───────────────────────
     @PostMapping("/{id}/members")
     public ResponseEntity<Void> addMember(@PathVariable Long id,

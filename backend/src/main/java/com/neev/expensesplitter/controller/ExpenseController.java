@@ -36,6 +36,16 @@ public class ExpenseController {
         return ResponseEntity.ok(toResponse(expense));
     }
 
+    // ── PUT /api/expenses/{id}  →  update expense ─────────────────────────────
+    @PutMapping("/{id}")
+    public ResponseEntity<ExpenseResponse> updateExpense(@PathVariable Long id,
+                                                         @Valid @RequestBody ExpenseRequest request,
+                                                         Principal principal) {
+        User user = resolveUser(principal);
+        Expense expense = expenseService.updateExpense(id, request, user);
+        return ResponseEntity.ok(toResponse(expense));
+    }
+
     // ── GET  /api/expenses/group/{groupId}  →  list group expenses ────────────
     @GetMapping("/group/{groupId}")
     public ResponseEntity<List<ExpenseResponse>> getGroupExpenses(@PathVariable Long groupId,
@@ -53,6 +63,14 @@ public class ExpenseController {
     public ResponseEntity<List<String>> getInsights(Principal principal) {
         User user = resolveUser(principal);
         return ResponseEntity.ok(expenseService.getInsights(user));
+    }
+
+    // ── DELETE /api/expenses/{id}  →  delete an expense ───────────────────────
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteExpense(@PathVariable Long id, Principal principal) {
+        User user = resolveUser(principal);
+        expenseService.deleteExpense(id, user);
+        return ResponseEntity.ok().build();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

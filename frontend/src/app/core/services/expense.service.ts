@@ -22,7 +22,17 @@ export class ExpenseService {
       .pipe(tap(list => this.expenses.set(list)));
   }
 
+  updateExpense(expenseId: number, req: ExpenseRequest): Observable<Expense> {
+    return this.http.put<Expense>(`${this.API}/${expenseId}`, req)
+      .pipe(tap(updated => this.expenses.update(list => list.map(e => e.id === expenseId ? updated : e))));
+  }
+
   getInsights(): Observable<string[]> {
     return this.http.get<string[]>(`${this.API}/insights`);
+  }
+
+  deleteExpense(expenseId: number): Observable<void> {
+    return this.http.delete<void>(`${this.API}/${expenseId}`)
+      .pipe(tap(() => this.expenses.update(list => list.filter(e => e.id !== expenseId))));
   }
 }

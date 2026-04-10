@@ -17,11 +17,18 @@ import { BalanceEntry, Expense, GroupMember, ExpenseRequest } from '../../core/m
 })
 export class GroupDetailComponent implements OnInit {
   groupId!: number;
-  groupName = signal('');
+  groupNameDisplay = computed(() => {
+    const group = this.groupService.groups().find(g => g.id === this.groupId);
+    return group ? group.name : 'Group Expenses';
+  });
+
+  isEditingGroup = signal(false);
+  editGroupName = signal('');
+
   members   = signal<GroupMember[]>([]);
   expenses  = computed(() => this.expenseService.expenses());
   balances  = signal<BalanceEntry[]>([]);
-
+  
   loading         = signal(true);
   loadingBalances = signal(false);
   balancesLoaded  = signal(false);
@@ -34,6 +41,7 @@ export class GroupDetailComponent implements OnInit {
 
   // Add expense modal
   showExpenseModal = signal(false);
+  editingExpense = signal<Expense | undefined>(undefined);
 
   currentUser = computed(() => this.authService.currentUser());
 
@@ -126,8 +134,44 @@ export class GroupDetailComponent implements OnInit {
   }
 
   toggleMemberPanel(): void { this.showMemberPanel.update(v => !v); }
-  openExpenseModal(): void  { this.showExpenseModal.set(true); }
+  openExpenseModal(expense?: Expense): void  { 
+    this.editingExpense.set(expense);
+    this.showExpenseModal.set(true); 
+  }
   closeExpenseModal(): void { this.showExpenseModal.set(false); }
+
+  // ── Edit & Delete Group ────────────────────────
+  enableEditGroup(): void {
+    this.editGroupName.set(this.groupNameDisplay());
+    this.isEditingGroup.set(true);
+  }
+
+  saveGroup(): void {
+    const newName = this.editGroupName().trim();
+    if (!newName) return;
+    this.groupService.updateGroup(this.groupId, newName).subscribe(() => {
+      this.isEditingGroup.set(false);
+    });
+  }
+
+  deleteGroup(): void {
+    if (confirm('Are you sure you want to permanently delete this group? All expenses will be lost.')) {
+      this.groupService.deleteGroup(this.groupId).subscribe(() => {
+        this.router.navigate(['/dashboard']);
+      });
+    }
+  }
+
+  // ── Delete Expense ────────────────────────────
+  deleteExpense(expenseId: number): void {
+    if (confirm('Are you sure you want to delete this expense?')) {
+      this.expenseService.deleteExpense(expenseId).subscribe(() => {
+        if (this.balancesLoaded()) {
+          this.loadBalances();
+        }
+      });
+    }
+  }
 
   goBack(): void { this.router.navigate(['/dashboard']); }
 }
