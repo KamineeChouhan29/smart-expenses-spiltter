@@ -7,7 +7,7 @@ import { JwtResponse } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly API = 'http://localhost:8080/api/auth';
+  private apiUrl = 'https://smart-expenses-spiltter.onrender.com/api/auth';
   private readonly TOKEN_KEY = 'jwt_token';
   private readonly USER_KEY  = 'current_user';
 

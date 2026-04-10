@@ -5,7 +5,7 @@ import { BalanceEntry, Group, GroupMember } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class GroupService {
-  private readonly API = 'http://localhost:8080/api/groups';
+  private apiUrl = 'https://smart-expenses-spiltter.onrender.com/api/groups';
 
   // Reactive signals for real-time dashboard updates
   groups = signal<Group[]>([]);

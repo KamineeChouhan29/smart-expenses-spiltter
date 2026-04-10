@@ -5,7 +5,7 @@ import { Expense, ExpenseRequest } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class ExpenseService {
-  private readonly API = 'http://localhost:8080/api/expenses';
+  private apiUrl = 'https://smart-expenses-spiltter.onrender.com/api/expenses';
 
   // Reactive signal — updates dashboard balance in real time
   expenses = signal<Expense[]>([]);
